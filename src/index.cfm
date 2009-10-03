@@ -12,7 +12,7 @@
 
 
 <h2>Uninstallation</h2>
-<p>To uninstall this plugin simply delete the <tt>/plugins/SessionCache-0.1.zip</tt> file.</p>
+<p>To uninstall this plugin simply delete the <tt>/plugins/SessionCache-0.3.zip</tt> file.</p>
 
 <h2>Credits</h2>
 <p>This plugin was created by <a href="http://iamjamesgibson.com">James Gibson</a>.</p>
