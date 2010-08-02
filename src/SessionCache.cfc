@@ -1,29 +1,40 @@
-<cfcomponent output="false">
+<cfcomponent output="false" mixin="controller,model,application">
 
-	<cffunction name="init" access="public">
-		<cfset this.version = "0.9.4">
+	<cffunction name="init" access="public" output="false">
+		<cfscript>
+			if (StructKeyExists(application, "sessionFacade"))
+				StructDelete(application, "sessionFacade");
+				
+			this.version = "1.0,1.1";
+		</cfscript>
 		<cfreturn this />
 	</cffunction>
 	
-	<cffunction name="sessionCache" access="public">
-		<cfargument name="variableName" required="true" type="string" />
+	<cffunction name="sessionCache" access="public" output="false">
+		<cfargument name="key" required="true" type="string" />
 		<cfargument name="value" required="false" type="any" />
-		
-		<cfif not StructKeyExists(variables, "instance")>
-			<cfset variables.instance = {} />
-		</cfif>
-		
-		<!--- we need to created our cache on every request --->
-		<cfif not StructKeyExists(variables.instance, "sessionFacade")>
-			<cfset variables.instance.sessionFacade = createObject("component", "SessionFacade") />
-		</cfif>
-		
-		<cfif StructKeyExists(arguments, "value")>
-			<cfset variables.instance.sessionFacade.set(arguments.variableName, arguments.value, true) />
-			<cfreturn />
-		</cfif>
-		
-		<cfreturn variables.instance.sessionFacade.get(arguments.variableName) />
+		<cfscript>
+			// set the session facade class to the application scope so we are not recreating the object for every request
+			if (not StructKeyExists(application, "sessionFacade"))
+				application.sessionFacade = CreateObject("component", "SessionFacade").init();
+				
+			if (StructKeyExists(arguments, "value"))
+			{
+				application.sessionFacade.set(arguments.key, arguments.value);
+				return;
+			}
+		</cfscript>
+		<cfreturn application.sessionFacade.get(arguments.key) />
+	</cffunction>
+	
+	<cffunction name="sessionKeyExists" returntype="boolean" access="public" output="false">
+		<cfargument name="key" required="true" type="string" />
+		<cfreturn application.sessionFacade.exists(argumentCollection=arguments) />
+	</cffunction>
+	
+	<cffunction name="sessionDelete" access="public" output="false">
+		<cfargument name="key" required="true" type="string" />
+		<cfreturn application.sessionFacade.delete(argumentCollection=arguments) />
 	</cffunction>
 
 </cfcomponent>

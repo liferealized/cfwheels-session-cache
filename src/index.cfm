@@ -7,12 +7,12 @@
 <p>Here is a listing of the methods that are added by this plugin.</p>
 
 <ul>
-	<li>sessionCache (variableName, [value]) - affords you the ability to cache session data during a request to aliviate session locking.</li>
+	<li>sessionCache (key, [value]) - affords you the ability to cache session data during a request to aliviate session locking.</li>
 </ul>
 
 
 <h2>Uninstallation</h2>
-<p>To uninstall this plugin simply delete the <tt>/plugins/SessionCache-0.3.zip</tt> file.</p>
+<p>To uninstall this plugin simply delete the <tt>/plugins/SessionCache-0.1.zip</tt> file.</p>
 
 <h2>Credits</h2>
 <p>This plugin was created by <a href="http://iamjamesgibson.com">James Gibson</a>.</p>

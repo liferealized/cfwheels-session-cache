@@ -2,65 +2,111 @@
 
 	<cfset request.session = {} />
 
-	<cffunction name="init" access="public">
+	<cffunction name="init" access="public" output="false">
 		<cfreturn this />
 	</cffunction>
 	
-	<cffunction name="getCache" access="public">
+	<cffunction name="getCache" access="public" output="false">
+		<cfscript>
+			if (not StructKeyExists(request, "session"))
+				return StructNew();
+		</cfscript>
 		<cfreturn request.session />
 	</cffunction>
 	
 	<!--- gets a variable name from the sesssion store --->
-	<cffunction name="get" access="public">
-		<cfargument name="variableName" required="true" type="string" />
+	<cffunction name="get" access="public" output="false">
+		<cfargument name="key" required="true" type="string" />
 		<cfargument name="errorOnNotFound" required="false" type="boolean" default="false" />
-		
-		<cfset var loc = {} />
-		<Cfset loc.null = "" />
-		
-		<!--- check to see if we have cached the variables so we do not have to lock the session --->
-		<cfif StructKeyExists(request.session, arguments.variableName)>
-			<cfreturn StructFind(session, arguments.variableName) />
-		</cfif>
+		<cfscript>
+			var loc = {};
+			
+			if (not StructKeyExists(request, "session"))
+				request.session = {};
+			
+			// check to see if we have cached the variables so we do not have to lock the session
+			if (StructKeyExists(request.session, arguments.key))
+				return StructFind(request.session, arguments.key);
+		</cfscript>
 		
 		<!--- we didn't find it in the cache so try to get it from the session --->
-		<cflock scope="session" timeout="30">
-			<cfif StructKeyExists(session, arguments.variableName)>
-				<cfset loc.value = StructFind(session, arguments.variableName) />
-				<cfset loc.dump = StructInsert(request.session, arguments.variableName, loc.value, false) />
-				<cfreturn loc.value />
-			</cfif>
+		<cflock name="sessionFacade" type="readonly" timeout="5">
+			<cfscript>
+				if (StructKeyExists(session, arguments.key))
+				{
+					loc.value = StructFind(session, arguments.key);
+					StructInsert(request.session, arguments.key, loc.value, false);
+				}
+			</cfscript>
 		</cflock>
 		
-		<!--- we didn't find it in the session, should we throw an error --->
-		<cfif arguments.errorOnNotFound>
-			<cfthrow type="reservoir.sessionVariableNotFound"
-					 message="The variable #arguments.variableName# could not be found in the session" />
-		</cfif>
-		
-		<cfreturn loc.null />
+		<cfscript>
+			if (StructKeyExists(loc, "value"))
+				return loc.value;
+				
+			if (arguments.errorOnNotFound)
+				$throw(type="reservoir.sessionVariableNotFound", message="The variable #arguments.key# could not be found in the session");	
+		</cfscript>
+		<cfreturn />
 	</cffunction>
 	
 	<!--- sets a session variable and caches it in case of a later request --->
-	<cffunction name="set">
-		<cfargument name="variableName" required="true" type="string" />
+	<cffunction name="set" access="public" output="false">
+		<cfargument name="key" required="true" type="string" />
 		<cfargument name="value" required="true" type="any" />
 		<cfargument name="allowOverwrite" required="false" type="boolean" default="true" />
+		<cfscript>
+			var loc = {};
+			
+			StructInsert(request.session, arguments.key, arguments.value, arguments.allowOverwrite);
+		</cfscript>
 		
-		<cfset var loc = {} />
-		
-		<cfset loc.dump = StructInsert(request.session, arguments.variableName, arguments.value, arguments.allowOverwrite) />
-		
-		<cflock scope="session" timeout="30">
-			<cfset loc.dump = StructInsert(session, arguments.variableName, arguments.value, arguments.allowOverwrite) />
+		<cflock name="sessionFacade" type="exclusive" timeout="5">
+			<cfset StructInsert(session, arguments.key, arguments.value, arguments.allowOverwrite) />
 		</cflock>
+	</cffunction>
+	
+	<cffunction name="exists" access="public" output="false" returntype="boolean">
+		<cfargument name="key" required="true" type="string" />
+		<cfscript>
+			var exists = false;
+			
+			// check in the cache first
+			exists = StructKeyExists(request.session, arguments.key);
+		</cfscript>
+		<cfif not exists>
+			<cflock name="sessionFacade" type="readonly" timeout="5">
+				<cfscript>
+					exists = StructKeyExists(session, arguments.key);
+				</cfscript>
+			</cflock>
+		</cfif>
+		<cfreturn exists />
+	</cffunction>
+	
+	<cffunction name="delete" access="public" output="false" returntype="void">
+		<cfargument name="key" required="true" type="string" />
+		<cfscript>
+			var exists = false;
+			
+			// check in the cache first
+			StructDelete(request.session, arguments.key);
+		</cfscript>
+		<cfif not exists>
+			<cflock name="sessionFacade" type="exclusive" timeout="5">
+				<cfscript>
+					StructDelete(session, arguments.key);
+				</cfscript>
+			</cflock>
+		</cfif>
+		<cfreturn />
 	</cffunction>
 	
 	<!--- if we try to get a variable out of the session by calling session.siteId(), 
 		  method missing will allow us to do this by recovering from the error --->
-	<cffunction name="OnMissingMethod">
-		<cfargument name="MissingMethodName" type="string" required="true" />
-		<cfargument name="MissingMethodArguments" type="struct" required="true" />
+	<cffunction name="onMissingMethod" access="public" output="false">
+		<cfargument name="missingMethodName" type="string" required="true" />
+		<cfargument name="missingMethodArguments" type="struct" required="true" />
 		
 		<cfreturn this.get(arguments.MissingMethodName) />	
 	</cffunction>
