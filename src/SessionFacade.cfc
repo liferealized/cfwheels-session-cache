@@ -58,6 +58,9 @@
 		<cfscript>
 			var loc = {};
 			
+			if (not StructKeyExists(request, "session"))
+				request.session = {};
+			
 			StructInsert(request.session, arguments.key, arguments.value, arguments.allowOverwrite);
 		</cfscript>
 		
