@@ -15,9 +15,7 @@
 		<cfargument name="value" required="false" type="any" />
 		<cfscript>
 			// set the session facade class to the application scope so we are not recreating the object for every request
-			if (not StructKeyExists(application, "sessionFacade"))
-				application.sessionFacade = CreateObject("component", "SessionFacade").init();
-				
+			$ensureSessionFacadeExists();	
 			if (StructKeyExists(arguments, "value"))
 			{
 				application.sessionFacade.set(arguments.key, arguments.value);
@@ -29,12 +27,21 @@
 	
 	<cffunction name="sessionKeyExists" returntype="boolean" access="public" output="false">
 		<cfargument name="key" required="true" type="string" />
+		<cfset $ensureSessionFacadeExists() />
 		<cfreturn application.sessionFacade.exists(argumentCollection=arguments) />
 	</cffunction>
 	
 	<cffunction name="sessionDelete" access="public" output="false">
 		<cfargument name="key" required="true" type="string" />
+		<cfset $ensureSessionFacadeExists() />
 		<cfreturn application.sessionFacade.delete(argumentCollection=arguments) />
+	</cffunction>
+	
+	<cffunction name="$ensureSessionFacadeExists" access="public" output="false" returntype="void">
+		<cfscript>
+			if (not StructKeyExists(application, "sessionFacade"))
+				application.sessionFacade = CreateObject("component", "SessionFacade").init();		
+		</cfscript>
 	</cffunction>
 
 </cfcomponent>
