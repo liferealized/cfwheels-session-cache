@@ -74,6 +74,9 @@
 		<cfscript>
 			var exists = false;
 			
+			if (not StructKeyExists(request, "session"))
+				request.session = {};
+			
 			// check in the cache first
 			exists = StructKeyExists(request.session, arguments.key);
 		</cfscript>
@@ -91,6 +94,9 @@
 		<cfargument name="key" required="true" type="string" />
 		<cfscript>
 			var exists = false;
+			
+			if (not StructKeyExists(request, "session"))
+				request.session = {};
 			
 			// check in the cache first
 			StructDelete(request.session, arguments.key);
