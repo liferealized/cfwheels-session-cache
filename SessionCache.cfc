@@ -5,7 +5,7 @@
 			if (StructKeyExists(application, "sessionFacade"))
 				StructDelete(application, "sessionFacade");
 				
-			this.version = "1.0,1.1,1.1.8";
+			this.version = "1.0,1.1,1.1.8,1.4.5";
 		</cfscript>
 		<cfreturn this />
 	</cffunction>
